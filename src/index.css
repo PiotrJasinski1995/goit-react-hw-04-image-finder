@@ -1,0 +1,39 @@
+@import-normalize; /* bring in normalize.css styles */
+
+:root {
+  --timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  --animation-duration: 250ms;
+  --color-primary-brand: #4d5ae5;
+  --color-pressed-state: #404bbf;
+  --color-accent: #e7e9fc;
+  --color-light: #f4f4fd;
+  --color-white: #fff;
+  --color-modal-overlay: #2e2f4266;
+  --transition-general: var(--animation-duration) var(--timing-function);
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+ol,
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
