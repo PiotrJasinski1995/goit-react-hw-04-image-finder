@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import SearchBar from './SearchBar/SearchBar';
 import ImageGallery from './ImageGallery/ImageGallery';
 import ImageGalleryItem from './ImageGalleryItem/ImageGalleryItem';
@@ -14,101 +14,65 @@ import axios from 'axios';
 const API_KEY = '41284992-e3e58fe867fcadc7d8005ce00';
 const photosPerPage = 12;
 
-class App extends Component {
-  state = {
-    images: [],
+const App = () => {
+  const [images, setImages] = useState([]);
+  const [isLoading, setIsLoading] = useState({
     isLoading: false,
     isLoadingNew: false,
-    error: null,
-    currentPage: 1,
-    totalImages: 0,
-    filter: '',
-    selectedImage: {},
-    scrollImageIndex: 0,
-  };
+  });
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalImages, setTotalImages] = useState(0);
+  const [filter, setFilter] = useState('');
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [scrollImageIndex, setScrollImageIndex] = useState(0);
 
-  componentDidUpdate(prevProps, prevState) {
-    const prevImages = prevState.images;
-    const { images, scrollImageIndex } = this.state;
-    const gallery = document.querySelector('.gallery');
+  let imageRefs = useRef([]);
 
-    if (
-      prevImages.length !== images.length &&
-      images.length > photosPerPage &&
-      scrollImageIndex > 0
-    ) {
-      gallery.childNodes[scrollImageIndex].scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    }
-  }
-
-  componentWillUnmount() {
-    document.removeEventListener('keydown', this.handleCloseModalKeydown);
-  }
-
-  handleFormSubmit = async searchInput => {
-    const { filter } = this.state;
-
+  const handleFormSubmit = async searchInput => {
     if (searchInput === filter) return;
 
-    this.setState(
-      {
-        filter: searchInput,
-        currentPage: 1,
-      },
-      () => {
-        this.getImages();
-      }
-    );
+    setFilter(searchInput);
+    setCurrentPage(1);
+    getImages(false, 1, searchInput);
   };
 
-  handleButtonClick = async () => {
-    this.setState(
-      prevState => {
-        return { currentPage: prevState.currentPage + 1, scrollImageIndex: 0 };
-      },
-      () => {
-        this.getImages(true);
-      }
-    );
+  const handleButtonClick = async pageNumber => {
+    setCurrentPage(previousPage => previousPage + 1);
+    setScrollImageIndex(0);
+    getImages(true, pageNumber, filter);
   };
 
-  handleModalClick = event => {
+  const handleModalClick = event => {
     if (event.target.localName !== 'img') {
-      this.closeModal();
+      closeModal();
     }
   };
 
-  closeModal = () => {
-    this.setState({
-      selectedImage: {},
-    });
+  const closeModal = useCallback(() => {
+    setSelectedImage(null);
+  }, []);
 
-    document.removeEventListener('keydown', this.handleCloseModalKeydown);
+  const handleImageClick = (src, tags) => {
+    document.addEventListener('keydown', handleCloseModalKeydown);
+    setSelectedImage({ src, tags });
   };
 
-  handleImageClick = (src, tags) => {
-    document.addEventListener('keydown', this.handleCloseModalKeydown);
-    this.setState({
-      selectedImage: { src, tags },
-    });
-  };
+  const handleCloseModalKeydown = useCallback(
+    event => {
+      if (event.code === 'Escape') {
+        closeModal();
+      }
+    },
+    [closeModal]
+  );
 
-  handleCloseModalKeydown = event => {
-    if (event.code === 'Escape') {
-      this.closeModal();
-    }
-  };
-
-  getImages = async (loadNextPage = false) => {
-    const { currentPage, filter } = this.state;
-
-    this.setState({
-      isLoading: true,
-      isLoadingNew: !loadNextPage,
-    });
+  const getImages = async (
+    loadNextPage = false,
+    currentPage = 1,
+    filter = ''
+  ) => {
+    setIsLoading({ isLoading: true, isLoadingNew: !loadNextPage });
 
     try {
       const searchParams = new URLSearchParams({
@@ -122,9 +86,7 @@ class App extends Component {
 
       const { data } = await axios(`https://pixabay.com/api/?${searchParams}`);
 
-      this.setState({
-        totalImages: data.total,
-      });
+      setTotalImages(data.total);
 
       const images = data.hits.map(image => {
         return {
@@ -136,119 +98,107 @@ class App extends Component {
       });
 
       if (loadNextPage) {
-        this.setState(
-          prevState => {
-            const prevImages = [...prevState.images];
+        setImages(previousImages => {
+          setScrollImageIndex(previousImages.length);
 
-            return {
-              images: [...prevImages, ...images],
-              scrollImageIndex: prevImages.length,
-            };
-          },
-          () => {
-            const { images, totalImages } = this.state;
-
-            if (images.length >= totalImages) {
-              Notiflix.Notify.info("You've reached the end of search results.");
-            }
-          }
-        );
+          return [...previousImages, ...images];
+        });
       } else {
-        this.setState(
-          {
-            images,
-          },
-          () => {
-            const { images, totalImages } = this.state;
-            const totalPhotos = totalImages;
-
-            if (totalPhotos <= 0) {
-              Notiflix.Notify.failure(
-                'Sorry, there are no images matching your search query. Please try again.'
-              );
-            } else {
-              const imageString = totalPhotos === 1 ? 'image' : 'images';
-
-              Notiflix.Notify.info(
-                `Hooray! We found ${totalPhotos} ${imageString}.`
-              );
-
-              if (images.length >= totalImages) {
-                Notiflix.Notify.info(
-                  "You've reached the end of search results."
-                );
-              }
-            }
-          }
-        );
+        setImages(images);
       }
     } catch (error) {
-      this.setState({
-        error,
-      });
+      setError(error);
     } finally {
-      this.setState({
-        isLoading: false,
-        isLoadingNew: false,
-      });
+      setIsLoading({ isLoading: false, isLoadingNew: false });
     }
   };
 
-  render() {
-    const {
-      images,
-      isLoading,
-      isLoadingNew,
-      error,
-      totalImages,
-      selectedImage,
-    } = this.state;
+  useEffect(() => {
+    return () => {
+      if (selectedImage) {
+        document.removeEventListener('keydown', handleCloseModalKeydown);
+      }
+    };
+  }, [selectedImage, handleCloseModalKeydown]);
 
-    const showLoadMoreButton = images.length > 0 && images.length < totalImages;
+  useEffect(() => {
+    if (filter !== '' && !isLoading.isLoading) {
+      if (totalImages > 0) {
+        const imageString = totalImages === 1 ? 'image' : 'images';
+        Notiflix.Notify.info(`Hooray! We found ${totalImages} ${imageString}.`);
 
-    return (
-      <>
-        <MainHeading>Image Gallery App</MainHeading>
-        <SearchBar onSubmit={this.handleFormSubmit} />
-        <main>
-          <section>
-            <Container>
-              {error && (
-                <ErrorInfo>Something went wrong: {error.message}.</ErrorInfo>
-              )}
-              {!isLoadingNew && (
-                <ImageGallery>
-                  {images.map(image => {
-                    const { id, webformatURL, largeImageURL, tags } = image;
-                    return (
-                      <ImageGalleryItem
-                        key={id}
-                        src={webformatURL}
-                        srcLarge={largeImageURL}
-                        alt={tags}
-                        onClick={this.handleImageClick}
-                      />
-                    );
-                  })}
-                </ImageGallery>
-              )}
-              {showLoadMoreButton && (
-                <Button onClick={this.handleButtonClick}>Load more</Button>
-              )}
-              {isLoading && <Loader />}
-              {selectedImage.src && (
-                <Modal
-                  src={selectedImage.src}
-                  alt={selectedImage.alt}
-                  onClick={this.handleModalClick}
-                />
-              )}
-            </Container>
-          </section>
-        </main>
-      </>
-    );
-  }
-}
+        if (images.length >= totalImages) {
+          Notiflix.Notify.info("You've reached the end of search results.");
+        }
+      } else {
+        Notiflix.Notify.failure(
+          'Sorry, there are no images matching your search query. Please try again.'
+        );
+      }
+    }
+  }, [images, totalImages, filter, isLoading]);
+
+  useEffect(() => {
+    if (
+      imageRefs.current &&
+      scrollImageIndex > 0 &&
+      images.length > photosPerPage
+    ) {
+      console.log(imageRefs.current);
+      imageRefs.current[scrollImageIndex].scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
+  }, [scrollImageIndex, images]);
+
+  return (
+    <>
+      <MainHeading>Image Gallery App</MainHeading>
+      <SearchBar onSubmit={handleFormSubmit} />
+      <main>
+        <section>
+          <Container>
+            {error && (
+              <ErrorInfo>Something went wrong: {error.message}.</ErrorInfo>
+            )}
+            {!isLoading.isLoadingNew && (
+              <ImageGallery>
+                {images.map((image, index) => {
+                  const { id, webformatURL, largeImageURL, tags } = image;
+                  const getImageRef = element =>
+                    (imageRefs.current[index] = element);
+                  return (
+                    <ImageGalleryItem
+                      key={id}
+                      ref={getImageRef}
+                      src={webformatURL}
+                      srcLarge={largeImageURL}
+                      alt={tags}
+                      onClick={handleImageClick}
+                    />
+                  );
+                })}
+              </ImageGallery>
+            )}
+            {images.length > 0 && images.length < totalImages && (
+              <Button onClick={() => handleButtonClick(currentPage + 1)}>
+                Load more
+              </Button>
+            )}
+            {isLoading.isLoading && <Loader />}
+            {selectedImage && (
+              <Modal
+                src={selectedImage.src}
+                alt={selectedImage.alt}
+                onClick={handleModalClick}
+              />
+            )}
+          </Container>
+        </section>
+      </main>
+    </>
+  );
+};
 
 export default App;

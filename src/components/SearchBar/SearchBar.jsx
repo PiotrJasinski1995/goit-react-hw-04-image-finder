@@ -1,15 +1,8 @@
-import { Component } from 'react';
 import PropTypes from 'prop-types';
 import { StyledHeader, SearchFrom, StyledButton } from './styled';
 
-class SearchBar extends Component {
-  static propTypes = {
-    onSubmit: PropTypes.func,
-  };
-
-  handleSubmit = event => {
-    const { onSubmit } = this.props;
-
+const SearchBar = ({ onSubmit }) => {
+  const handleSubmit = event => {
     event.preventDefault();
     const searchText = event.target.elements.search.value;
 
@@ -18,23 +11,25 @@ class SearchBar extends Component {
     onSubmit(searchText);
   };
 
-  render() {
-    return (
-      <StyledHeader>
-        <SearchFrom onSubmit={this.handleSubmit}>
-          <input
-            name="search"
-            type="text"
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-          />
+  return (
+    <StyledHeader>
+      <SearchFrom onSubmit={handleSubmit}>
+        <input
+          name="search"
+          type="text"
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+        />
 
-          <StyledButton type="submit">Search</StyledButton>
-        </SearchFrom>
-      </StyledHeader>
-    );
-  }
-}
+        <StyledButton type="submit">Search</StyledButton>
+      </SearchFrom>
+    </StyledHeader>
+  );
+};
+
+SearchBar.propTypes = {
+  onSubmit: PropTypes.func,
+};
 
 export default SearchBar;

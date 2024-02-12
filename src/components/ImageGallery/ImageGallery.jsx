@@ -1,27 +1,30 @@
-import { Component } from 'react';
 import UpButton from 'components/UpButton/UpButton';
 import { StyledGallery } from './styled';
+import { useEffect, useState } from 'react';
 
-class ImageGallery extends Component {
-  state = {
-    scrollPos: 0,
+const ImageGallery = ({ children }) => {
+  const [showUpButton, setShowUpButton] = useState(false);
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  const handleScroll = () => {
+    if (
+      document.body.scrollTop > 20 ||
+      document.documentElement.scrollTop > 20
+    ) {
+      setShowUpButton(true);
+    } else {
+      setShowUpButton(false);
+    }
   };
 
-  componentDidMount() {
-    window.addEventListener('scroll', this.handleScroll);
-  }
-
-  handleScroll = () => {
-    const { scrollPos } = this.state;
-
-    this.setState({ scrollPos });
-  };
-
-  componentWillUnmount() {
-    window.removeEventListener('scroll', this.handleScroll);
-  }
-
-  handleUpButtonClick = () => {
+  const handleUpButtonClick = () => {
     document.body.scrollIntoView({
       behavior: 'smooth',
       block: 'start',
@@ -32,18 +35,12 @@ class ImageGallery extends Component {
     });
   };
 
-  render() {
-    const { children } = this.props;
-    const showUpButton =
-      document.body.scrollTop > 20 || document.documentElement.scrollTop > 20;
-
-    return (
-      <>
-        <StyledGallery className="gallery">{children}</StyledGallery>
-        {showUpButton && <UpButton onClick={this.handleUpButtonClick} />}
-      </>
-    );
-  }
-}
+  return (
+    <>
+      <StyledGallery>{children}</StyledGallery>
+      {showUpButton && <UpButton onClick={handleUpButtonClick} />}
+    </>
+  );
+};
 
 export default ImageGallery;

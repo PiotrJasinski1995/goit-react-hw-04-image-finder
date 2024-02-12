@@ -1,36 +1,26 @@
-import { Component } from 'react';
 import PropTypes from 'prop-types';
 import { StyledImage, StyledListElement } from './styled';
+import { forwardRef } from 'react';
 
-class ImageGalleryItem extends Component {
-  static defaultProps = {
-    src: '',
-    srcLarge: '',
-    alt: ',',
-  };
-
-  static propTypes = {
-    src: PropTypes.string,
-    srcLarge: PropTypes.string,
-    alt: PropTypes.string,
-    onClick: PropTypes.func,
-  };
-
-  handleImageClick = event => {
-    const { srcLarge, alt, onClick } = this.props;
-
-    onClick(srcLarge, alt);
-  };
-
-  render() {
-    const { src, alt } = this.props;
+const ImageGalleryItem = forwardRef(
+  ({ src = '', srcLarge = '', alt = '', onClick }, ref) => {
+    const handleImageClick = _event => {
+      onClick(srcLarge, alt);
+    };
 
     return (
-      <StyledListElement onClick={this.handleImageClick}>
+      <StyledListElement onClick={handleImageClick} ref={ref}>
         <StyledImage src={src} alt={alt} loading="lazy" />
       </StyledListElement>
     );
   }
-}
+);
+
+ImageGalleryItem.propTypes = {
+  src: PropTypes.string,
+  srcLarge: PropTypes.string,
+  alt: PropTypes.string,
+  onClick: PropTypes.func,
+};
 
 export default ImageGalleryItem;

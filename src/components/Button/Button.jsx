@@ -1,17 +1,12 @@
-import { Component } from 'react';
 import PropTypes from 'prop-types';
 import { StyledButton } from './styled';
 
-class Button extends Component {
-  static propTypes = {
-    onClick: PropTypes.func,
-  };
+const Button = ({ onClick, children }) => {
+  return <StyledButton onClick={onClick}>{children}</StyledButton>;
+};
 
-  render() {
-    const { onClick, children } = this.props;
-
-    return <StyledButton onClick={onClick}>{children}</StyledButton>;
-  }
-}
+Button.propTypes = {
+  onClick: PropTypes.func,
+};
 
 export default Button;
